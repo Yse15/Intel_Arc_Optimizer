@@ -246,37 +246,6 @@ INTEL_TWEAKS = {
             "Remove-ItemProperty -Path $k3d -Name 'Global_PrebuiltShaders' -Force -EA SilentlyContinue"
         ),
     },
-    "intel_msi_mode": {
-        "label": "MSI Прерывания видеокарты (Message Signaled-Based Interrupts)",
-        "desc": "Переводит Intel GPU в режим аппаратных MSI-прерываний с высоким приоритетом (DevicePriority=3). Снижает DPC-latency и микрофризы. Требует прав Администратора.",
-        "cat": "Ядро и Драйвер",
-        "recommended": True,
-        "ps": (
-            "$devs = Get-PnpDevice | Where-Object { $_.FriendlyName -match 'Intel|Arc' -and $_.Class -eq 'Display' -and $_.Status -eq 'OK' }; "
-            "if (-not $devs) { throw 'Intel Display device not found' }; "
-            "foreach($d in $devs) { "
-            "  $msiPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties'; "
-            "  if (-not (Test-Path $msiPath)) { New-Item -Path $msiPath -Force | Out-Null }; "
-            "  Set-ItemProperty -Path $msiPath -Name 'MSISupported' -Value 1 -Type DWord -Force -EA Stop; "
-            "  Set-ItemProperty -Path $msiPath -Name 'MessageNumberLimit' -Value 4 -Type DWord -Force -EA Stop; "
-            "  $affPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\Affinity Policy'; "
-            "  if (-not (Test-Path $affPath)) { New-Item -Path $affPath -Force | Out-Null }; "
-            "  Set-ItemProperty -Path $affPath -Name 'DevicePriority' -Value 3 -Type DWord -Force -EA Stop "
-            "}"
-        ),
-        "revert_ps": (
-            "$devs = Get-PnpDevice | Where-Object { $_.FriendlyName -match 'Intel|Arc' -and $_.Class -eq 'Display' -and $_.Status -eq 'OK' }; "
-            "foreach($d in $devs) { "
-            "  $msiPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties'; "
-            "  if (Test-Path $msiPath) { "
-            "    Remove-ItemProperty -Path $msiPath -Name 'MSISupported' -Force -EA SilentlyContinue; "
-            "    Remove-ItemProperty -Path $msiPath -Name 'MessageNumberLimit' -Force -EA SilentlyContinue "
-            "  }; "
-            "  $affPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\Affinity Policy'; "
-            "  if (Test-Path $affPath) { Remove-ItemProperty -Path $affPath -Name 'DevicePriority' -Force -EA SilentlyContinue } "
-            "}"
-        ),
-    },
     "intel_game_adaptive_sharpening": {
         "label": "Адаптивная резкость в играх (Intel 3D Adaptive Sharpening / CAS)",
         "desc": "Включает драйверный фильтр адаптивной резкости Contrast Adaptive Sharpening для 3D-приложений и CS2 (Global_AdaptiveSharpening=1, cs2.exe_AdaptiveSharpening=1). Устраняет замыливание TAA без потери производительности.",
@@ -375,7 +344,7 @@ def build_intel_batch_script(keys: list) -> tuple[str, list]:
         "  Start-Sleep -Milliseconds 600 "
         "}; "
         "try {",
-        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue };"
+        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue }; $devs = Get-PnpDevice | Where-Object { $_.FriendlyName -match 'Intel|Arc' -and $_.Class -eq 'Display' }; foreach($d in $devs) {   Remove-ItemProperty -Path ('HKLM:\\SYSTEM\CurrentControlSet\Enum\' + $d.InstanceId + '\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties') -Name 'MessageNumberLimit' -Force -EA SilentlyContinue;   Remove-ItemProperty -Path ('HKLM:\\SYSTEM\CurrentControlSet\Enum\' + $d.InstanceId + '\Device Parameters\Interrupt Management\Affinity Policy') -Name 'DevicePriority' -Force -EA SilentlyContinue };"
     ]
     for k in ordered:
         ps_code = INTEL_TWEAKS[k]["ps"]
@@ -405,7 +374,7 @@ def build_intel_revert_batch_script(keys: list) -> tuple[str, list]:
         "  Start-Sleep -Milliseconds 600 "
         "}; "
         "try {",
-        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue };"
+        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue }; $devs = Get-PnpDevice | Where-Object { $_.FriendlyName -match 'Intel|Arc' -and $_.Class -eq 'Display' }; foreach($d in $devs) {   Remove-ItemProperty -Path ('HKLM:\\SYSTEM\CurrentControlSet\Enum\' + $d.InstanceId + '\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties') -Name 'MessageNumberLimit' -Force -EA SilentlyContinue;   Remove-ItemProperty -Path ('HKLM:\\SYSTEM\CurrentControlSet\Enum\' + $d.InstanceId + '\Device Parameters\Interrupt Management\Affinity Policy') -Name 'DevicePriority' -Force -EA SilentlyContinue };"
     ]
     for k in ordered:
         ps_code = INTEL_TWEAKS[k]["revert_ps"]
