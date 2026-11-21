@@ -1,0 +1,13 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# PyInstaller build directories
+build/
+dist/
+*.spec
+
+# Local migration flag
+.migration_done
