@@ -205,12 +205,14 @@ INTEL_TWEAKS = {
         ),
     },
     "intel_energy_saving_off": {
-        "label": "Отключение энергосбережения дисплейного движка (DisableEnergySaving)",
-        "desc": "Запрещает видеочипу Intel снижать питание и такты дисплейного контроллера при падении FPS в меню или паузах (DisableEnergySaving=1).",
+        "label": "Отключение энергосбережения дисплейного движка (Display Engine Performance)",
+        "desc": "Запрещает видеочипу Intel снижать такты и питание дисплейного контроллера при падении FPS в меню, активируя прямой HSync флип без микролагов.",
         "cat": "Частоты и Питание",
         "recommended": True,
         "ps": (
-            "Set-ItemProperty -Path $p -Name 'DisableEnergySaving' -Value 1 -Type DWord -Force -EA Stop"
+            "Set-ItemProperty -Path $p -Name 'Display1_DisableAsyncFlips' -Value 0 -Type DWord -Force -EA Stop; "
+            "Set-ItemProperty -Path $p -Name 'DisableFlipImmediateOnHSync' -Value 0 -Type DWord -Force -EA Stop; "
+            "Remove-ItemProperty -Path $p -Name 'DisableEnergySaving' -Force -EA SilentlyContinue"
         ),
         "revert_ps": (
             "Remove-ItemProperty -Path $p -Name 'DisableEnergySaving' -Force -EA SilentlyContinue"
@@ -370,20 +372,12 @@ def get_adapter_resolution_header() -> str:
 
 def build_intel_batch_script(keys: list) -> tuple[str, list]:
     """
-    Собирает один PS-скрипт с 1 остановкой и 1 запуском служб Intel.
+    Собирает один PS-скрипт без остановки служб Intel.
     Каждый шаг обёрнут в $( ... ) | Out-Null для надёжного выполнения сложных выражений.
     """
     ordered = [k for k in keys if k in INTEL_TWEAKS and INTEL_TWEAKS[k].get("ps")]
-    svc_list = ", ".join(f"'{s}'" for s in INTEL_SVCS)
     lines = [
         get_adapter_resolution_header(),
-        f"$_svcsRunning = @(); foreach($_s in @({svc_list})) {{ "
-        "$_svc = Get-Service $_s -EA SilentlyContinue; "
-        "if($_svc -and $_svc.Status -eq 'Running') { Stop-Service $_s -Force -EA SilentlyContinue; $_svcsRunning += $_s } "
-        "}; if($_svcsRunning.Count -gt 0){ "
-        "  Write-Output ('INTEL_SVCS_STOPPED:' + ($_svcsRunning -join '|')); "
-        "  Start-Sleep -Milliseconds 600 "
-        "}; "
         "try {"
     ]
     for k in ordered:
@@ -392,27 +386,15 @@ def build_intel_batch_script(keys: list) -> tuple[str, list]:
             f"  try {{ $( {ps_code} ) | Out-Null; Write-Output 'INTEL_STEP:{k}:OK' }} "
             f"  catch {{ Write-Output ('INTEL_STEP:{k}:FAIL:' + $_.Exception.Message) }}"
         )
-    lines.append(
-        "} finally { "
-        "  foreach($_s in $_svcsRunning) { Start-Service $_s -EA SilentlyContinue } "
-        "}"
-    )
+    lines.append("} finally {}")
     return "\n".join(lines), ordered
 
 
 def build_intel_revert_batch_script(keys: list) -> tuple[str, list]:
-    """Собирает один PS-скрипт для отката Intel твиков к заводским дефолтам."""
+    """Собирает один PS-скрипт для отката Intel твиков к заводским дефолтам без остановки служб."""
     ordered = [k for k in keys if k in INTEL_TWEAKS and INTEL_TWEAKS[k].get("revert_ps")]
-    svc_list = ", ".join(f"'{s}'" for s in INTEL_SVCS)
     lines = [
         get_adapter_resolution_header(),
-        f"$_svcsRunning = @(); foreach($_s in @({svc_list})) {{ "
-        "$_svc = Get-Service $_s -EA SilentlyContinue; "
-        "if($_svc -and $_svc.Status -eq 'Running') { Stop-Service $_s -Force -EA SilentlyContinue; $_svcsRunning += $_s } "
-        "}; if($_svcsRunning.Count -gt 0){ "
-        "  Write-Output ('INTEL_SVCS_STOPPED:' + ($_svcsRunning -join '|')); "
-        "  Start-Sleep -Milliseconds 600 "
-        "}; "
         "try {"
     ]
     for k in ordered:
@@ -421,11 +403,7 @@ def build_intel_revert_batch_script(keys: list) -> tuple[str, list]:
             f"  try {{ $( {ps_code} ) | Out-Null; Write-Output 'INTEL_REVERT:{k}:OK' }} "
             f"  catch {{ Write-Output ('INTEL_REVERT:{k}:FAIL:' + $_.Exception.Message) }}"
         )
-    lines.append(
-        "} finally { "
-        "  foreach($_s in $_svcsRunning) { Start-Service $_s -EA SilentlyContinue } "
-        "}"
-    )
+    lines.append("} finally {}")
     return "\n".join(lines), ordered
 
 
