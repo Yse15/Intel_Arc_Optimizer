@@ -270,11 +270,7 @@ INTEL_TWEAKS = {
             "foreach($d in $devs) { "
             "  $msiPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\MessageSignaledInterruptProperties'; "
             "  if (-not (Test-Path $msiPath)) { New-Item -Path $msiPath -Force | Out-Null }; "
-            "  Set-ItemProperty -Path $msiPath -Name 'MSISupported' -Value 1 -Type DWord -Force -EA Stop; "
-            "  Set-ItemProperty -Path $msiPath -Name 'MessageNumberLimit' -Value 4 -Type DWord -Force -EA Stop; "
-            "  $affPath = 'HKLM:\\SYSTEM\\CurrentControlSet\\Enum\\' + $d.InstanceId + '\\Device Parameters\\Interrupt Management\\Affinity Policy'; "
-            "  if (-not (Test-Path $affPath)) { New-Item -Path $affPath -Force | Out-Null }; "
-            "  Set-ItemProperty -Path $affPath -Name 'DevicePriority' -Value 3 -Type DWord -Force -EA Stop "
+            "  Set-ItemProperty -Path $msiPath -Name 'MSISupported' -Value 1 -Type DWord -Force -EA Stop "
             "}"
         ),
         "revert_ps": (
