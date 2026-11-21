@@ -11,6 +11,9 @@
   - **VRR Windowed BLT**: поддержка переменной частоты обновления для оконных и безрамочных игр (`Global_VRRWindowedBLT=1`).
   - **IGCL & Frame Generation**: аппаратный конвейер XeSS Frame Generation (`IGCLFrameGeneration=1`, `Global_FrameGeneration=1`).
   - **3DKeys Low-Latency CS2 Профиль**: режим Ultra Low Latency (`cs2.exe_LowLatency=2`), прямой флип (`cs2.exe_AsyncFlipMode=32`) и предкомпиляция шейдеров (`Global_PrebuiltShaders=1`).
+  - **Адаптивная резкость в 3D играх (Intel CAS)**: аппаратный фильтр Contrast Adaptive Sharpening (`Global_AdaptiveSharpening=1`, `cs2.exe_AdaptiveSharpening=1`, `Disable_OverlayDSQualityEnhancement=0`). Устраняет мыло TAA без потери FPS.
+  - **Аппаратное ИИ-суперразрешение видео (Intel VSR)**: масштабирование потокового видео на базе ядер XMX на Arc B580 (`SuperResolutionEnabled=1` в `MediaKeys`). Для YouTube/Twitch в Chrome/Edge (`chrome://flags/#enable-intel-vpp-super-resolution`).
+  - **Повышенная резкость видео (Intel VPP Detail 70%)**: аппаратное повышение детализации видео до 70.0% (`SharpnessFactor=1116471296`, `SharpnessEnabledAlways=1`) вместо заводских мутных 44.0%.
   - **Аппаратные MSI-прерывания**: приоритетный режим `MessageSignaledInterruptProperties` (MSISupported=1, DevicePriority=3) для снижения DPC-latency и стабилизации 0.1% low FPS.
 
 - **Комплексная очистка кэша шейдеров**:

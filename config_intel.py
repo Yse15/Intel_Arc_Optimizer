@@ -289,6 +289,58 @@ INTEL_TWEAKS = {
             "}"
         ),
     },
+    "intel_game_adaptive_sharpening": {
+        "label": "Адаптивная резкость в играх (Intel 3D Adaptive Sharpening / CAS)",
+        "desc": "Включает драйверный фильтр адаптивной резкости Contrast Adaptive Sharpening для 3D-приложений и CS2 (Global_AdaptiveSharpening=1, cs2.exe_AdaptiveSharpening=1). Устраняет замыливание TAA без потери производительности.",
+        "cat": "Игровые Технологии",
+        "recommended": True,
+        "ps": (
+            "Set-ItemProperty -Path $k3d -Name 'Global_AdaptiveSharpening' -Value 1 -Type DWord -Force -EA Stop; "
+            "Set-ItemProperty -Path $k3d -Name 'cs2.exe_AdaptiveSharpening' -Value 1 -Type DWord -Force -EA Stop; "
+            "Set-ItemProperty -Path $p -Name 'Disable_OverlayDSQualityEnhancement' -Value 0 -Type DWord -Force -EA Stop"
+        ),
+        "revert_ps": (
+            "Remove-ItemProperty -Path $k3d -Name 'Global_AdaptiveSharpening' -Force -EA SilentlyContinue; "
+            "Remove-ItemProperty -Path $k3d -Name 'cs2.exe_AdaptiveSharpening' -Force -EA SilentlyContinue; "
+            "Remove-ItemProperty -Path $p -Name 'Disable_OverlayDSQualityEnhancement' -Force -EA SilentlyContinue"
+        ),
+    },
+    "intel_video_super_resolution": {
+        "label": "Аппаратное ИИ-суперразрешение видео (Intel VSR / Super Resolution)",
+        "desc": "Активирует нейросетевое масштабирование и повышение четкости видео с использованием матричных ядер XMX на Arc B580 (SuperResolutionEnabled=1). Улучшает видео на YouTube/Twitch в Chrome и Edge.",
+        "cat": "Видео и Качество",
+        "recommended": True,
+        "ps": (
+            "Set-ItemProperty -Path $kMedia -Name 'SuperResolutionEnabled' -Value 1 -Type DWord -Force -EA Stop; "
+            "$cui = 'HKLM:\\Software\\Intel\\Display\\igfxcui\\MediaKeys'; "
+            "if (-not (Test-Path $cui)) { New-Item -Path $cui -Force -EA SilentlyContinue | Out-Null }; "
+            "Set-ItemProperty -Path $cui -Name 'SuperResolutionEnabled' -Value 1 -Type DWord -Force -EA SilentlyContinue"
+        ),
+        "revert_ps": (
+            "Set-ItemProperty -Path $kMedia -Name 'SuperResolutionEnabled' -Value 0 -Type DWord -Force -EA SilentlyContinue; "
+            "$cui = 'HKLM:\\Software\\Intel\\Display\\igfxcui\\MediaKeys'; "
+            "if (Test-Path $cui) { Set-ItemProperty -Path $cui -Name 'SuperResolutionEnabled' -Value 0 -Type DWord -Force -EA SilentlyContinue }"
+        ),
+    },
+    "intel_video_sharpness_boost": {
+        "label": "Повышенная резкость видео (Intel VPP Detail Enhancement 70%)",
+        "desc": "Включает аппаратный блок контурной резкости видеопроцессора (SharpnessEnabledAlways=1) и повышает коэффициент детализации до 70% вместо заводских 44% (SharpnessFactor=70.0% Float).",
+        "cat": "Видео и Качество",
+        "recommended": True,
+        "ps": (
+            "Set-ItemProperty -Path $kMedia -Name 'SharpnessEnabledAlways' -Value 1 -Type DWord -Force -EA Stop; "
+            "Set-ItemProperty -Path $kMedia -Name 'SharpnessFactor' -Value 1116471296 -Type DWord -Force -EA Stop; "
+            "$cui = 'HKLM:\\Software\\Intel\\Display\\igfxcui\\MediaKeys'; "
+            "if (-not (Test-Path $cui)) { New-Item -Path $cui -Force -EA SilentlyContinue | Out-Null }; "
+            "Set-ItemProperty -Path $cui -Name 'SharpnessEnabledAlways' -Value 1 -Type DWord -Force -EA SilentlyContinue; "
+            "Set-ItemProperty -Path $cui -Name 'SharpnessFactor' -Value 1116471296 -Type DWord -Force -EA SilentlyContinue"
+        ),
+        "revert_ps": (
+            "Set-ItemProperty -Path $kMedia -Name 'SharpnessFactor' -Value 1110441984 -Type DWord -Force -EA SilentlyContinue; "
+            "$cui = 'HKLM:\\Software\\Intel\\Display\\igfxcui\\MediaKeys'; "
+            "if (Test-Path $cui) { Set-ItemProperty -Path $cui -Name 'SharpnessFactor' -Value 1110441984 -Type DWord -Force -EA SilentlyContinue }"
+        ),
+    },
 }
 
 
@@ -312,7 +364,9 @@ def get_adapter_resolution_header() -> str:
         "if (-not $intel) { throw 'Intel Arc GPU not found in registry' }; "
         "$p = Join-Path $cls $intel.PSChildName; "
         "$k3d = Join-Path $p '3DKeys'; "
-        "if (-not (Test-Path $k3d)) { New-Item -Path $k3d -Force -EA SilentlyContinue | Out-Null };"
+        "if (-not (Test-Path $k3d)) { New-Item -Path $k3d -Force -EA SilentlyContinue | Out-Null }; "
+        "$kMedia = Join-Path $p 'MediaKeys'; "
+        "if (-not (Test-Path $kMedia)) { New-Item -Path $kMedia -Force -EA SilentlyContinue | Out-Null };"
     )
 
 
