@@ -204,18 +204,6 @@ INTEL_TWEAKS = {
             "Remove-ItemProperty -Path $p -Name 'AdaptiveVsyncEnable' -Force -EA SilentlyContinue"
         ),
     },
-    "intel_energy_saving_off": {
-        "label": "Отключение энергосбережения дисплейного движка (DisableEnergySaving)",
-        "desc": "Запрещает видеочипу Intel снижать питание и такты дисплейного контроллера при падении FPS в меню или паузах (DisableEnergySaving=1).",
-        "cat": "Частоты и Питание",
-        "recommended": True,
-        "ps": (
-            "Set-ItemProperty -Path $p -Name 'DisableEnergySaving' -Value 1 -Type DWord -Force -EA Stop"
-        ),
-        "revert_ps": (
-            "Remove-ItemProperty -Path $p -Name 'DisableEnergySaving' -Force -EA SilentlyContinue"
-        ),
-    },
     "intel_vrr_windowed": {
         "label": "VRR и Adaptive Sync для Оконного и Безрамочного режимов",
         "desc": "Включает поддержку переменной частоты обновления для оконных и безрамочных игр (Global_VRRWindowedBLT=1 в 3DKeys).",
@@ -386,7 +374,8 @@ def build_intel_batch_script(keys: list) -> tuple[str, list]:
         "  Write-Output ('INTEL_SVCS_STOPPED:' + ($_svcsRunning -join '|')); "
         "  Start-Sleep -Milliseconds 600 "
         "}; "
-        "try {"
+        "try {",
+        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue };"
     ]
     for k in ordered:
         ps_code = INTEL_TWEAKS[k]["ps"]
@@ -415,7 +404,8 @@ def build_intel_revert_batch_script(keys: list) -> tuple[str, list]:
         "  Write-Output ('INTEL_SVCS_STOPPED:' + ($_svcsRunning -join '|')); "
         "  Start-Sleep -Milliseconds 600 "
         "}; "
-        "try {"
+        "try {",
+        "  @('TurboAcPolicy','TurboDcPolicy','EnableGTTurboMode','ConnectedStandbyPlatform','PowerAcPolicy','PowerDcPolicy','PowerPolicy','ACUserPreferencePolicy','DCUserPreferencePolicy','DisableEnergySaving','PP_DisablePowerContainment') | ForEach-Object { Remove-ItemProperty -Path $p -Name $_ -Force -EA SilentlyContinue };"
     ]
     for k in ordered:
         ps_code = INTEL_TWEAKS[k]["revert_ps"]
